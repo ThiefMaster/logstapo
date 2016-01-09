@@ -1,0 +1,9 @@
+/.venv/
+/.idea/
+/.cache/
+.*.swp
+*.pyc
+*.cfg
+*.egg-info
+*.whl
+logstapo*.yml

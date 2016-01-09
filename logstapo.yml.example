@@ -1,0 +1,154 @@
+# Example config for logstapo
+
+# By default nothing is printed when running logstapo without errors.
+# This is ideal for a cron environment where all output results in an
+# email being sent.  When running it manually you might be interested
+# in more verbose output.  Each verbosity levels include the all
+# information from lower levels.
+#
+# The following verbosity levels can be used:
+#   - 0 -- default, no output except in case of an error
+#   - 1 -- non-spammy messages while processing log files
+#   - 2 -- shows all entries that are not ignored/garbage.  useful
+#          for testing since you can see which messages would be
+#          included in an action without having one configured.
+#
+# The following debugging modes can be used:
+#   - false -- default, no debug output
+#   - true  -- shows all entries that are processed.  very spammy!
+#
+# These settings may be overridden via command-line arguments.  It
+# is rarely useful to set them in the config file.
+# Enabling debug also enables maximum verbosity.
+
+verbosity: 0
+debug: false
+
+
+# Regular expressions used to parse log entries.  Usually you do not
+# need to change them, but if your log files have non-standard formats
+# you might need to adapt them to your logfiles.
+# Any name that starts with two underscores is not used directly but
+# may be included in another regex using `%(name)` minus the
+# underscores.
+# A regex with a non-underscored name may be referenced to parse
+# entries from a log file.  Such a regex must contain a group named
+# 'source' which contains the name of the program/source the log entry
+# came from and one named 'message' with the logged message.
+
+regexps:
+  __time: '\d{2}:\d{2}:\d{2}(?:,\d+)?'
+  __timestamp: '[A-Za-z]{3}\s+\d{1,2} %(time)'
+  __timestamp_iso: '\d{4}-\d{2}-\d{2} %(time)'
+  __hostname: '\S+'
+  __pid: '(?:\[\d+\])'
+  __daemon_with_pid: '(?:(?P<source>\S+?)%(pid)?:?)'
+  __kernel_prefix: '(?P<source>kernel): \[ *\d+\.\d+\]'
+  __message: '(?P<message>.*)'
+  syslog: '^%(timestamp) %(hostname) %(daemon_with_pid)\s+%(message)$'
+  kernel: '^%(timestamp) %(hostname) %(kernel_prefix)\s+%(message)$'
+  fail2ban: '^%(timestamp_iso) (?P<source>fail2ban.\S+)\s+%(pid): [A-Z]+\s+%(message)$'
+
+
+# The logs that should be checked.
+# For each log the following attributes are available:
+#   - files   -- required, must be the path to the log file or a list
+#                of paths
+#   - file    -- alias for `files`
+#   - regex   -- the name of the regex used to parse lines from the log.
+#                if unspecified, the name of the log is used.  may be a
+#                list of regex names if necessary.
+#   - garbage -- log lines which should be considered garbage and thus
+#                ignored.  this useful to get rid of extra lines from
+#                multi-line log entries which would otherwise trigger
+#                warnings about not being parsable by the line regex.
+#                see below on how to specify garbage patterns
+#   - ignore  -- log lines to ignore.  see below on how to specify
+#                ignore patterns
+#   - actions -- the action (or list of actions) to execute for
+#                entries from this log.  if omitted, all actions are
+#                executed
+#   - action  -- alias for `actions`
+#
+# Garbage patterns are the first patterns matched, and the pattern is
+# applied to the whole line (including possible timestamps etc.).
+#
+# Ignore patterns specify which log lines are 'known-safe' and should
+# be ignored.  They are applied to parsed log lines and can be
+# specified in two ways:
+#
+# By specifying the patterns right inside the `ignore` attribute as a
+# list they will be matched against all 'message' parts of log lines,
+# no matter what their 'source' is.
+#
+# `ignore` may also be a dictionary mapping source pattern to lists of
+# message patterns.  In this case a line is only ignored if both its
+# source and its message match.
+#
+# In case of a single pattern it may be specified directly without
+# putting it in a list.
+#
+# Patterns can be specified in multiple ways:
+#   - glob  -- a pattern with no special prefix performs a glob-style
+#              match with * matching anything and ? matching a single
+#              character.
+#   - regex -- a pattern surrounded by forward slashes (/) is matched
+#              using a python-style regex. the regex is automatically
+#              anchored to the start/end of the string, i.e. ^ and $
+#              are always the first/last characters of the regex.
+#              if you want to match just a small part of the string,
+#              use .* to match anything e.g. at the beginning or end.
+#              if you want to include slashes somewhere inside your
+#              regex you can do so without escaping them
+#              further information on the regex syntax can be found in
+#              the python documentation:
+#              https://docs.python.org/3/library/re.html
+#
+# All pattern types can be prefixed with a caret (^) to negate their
+# behavior.  Note that some special characters (e.g. a * at the
+# beginning of a dict key or value) have a special meaning in YAML and
+# thus require the key to be quoted.
+
+logs:
+  syslog:
+    files:
+      - /var/log/syslog
+      - /tmp/auth.log
+  kernel:
+    file: /var/log/kern
+  fail2ban:
+    file: /var/log/fail2ban.log
+
+
+# Actions define what happens when there are log entries which are not
+# ignored or could not be parsed.  Usually you want to send an email
+# to someone who can have a closer look in this case.
+# For each action the following attributes are available:
+#   - type -- required, must be the type of the action to perform.
+#             currently the only supported action is 'smtp'
+#   - auto -- true by default, set it to false if you do not want the
+#             action to be used for a log definition that has no
+#             actions specified
+#
+# Attributes specific to the 'smtp' action:
+#   - host     -- the ip address or hostname of the SMTP server
+#                 default: 'localhost'
+#   - port     -- the port of the SMTP server
+#                 default: 0 (auto)
+#   - ssl      -- whether to use a SSL-encrypted connection
+#                 mutually exclusive with `starttls`
+#                 default: false
+#   - starttls -- whether to use STARTTLS to encrypt the connection
+#                 mutually exclusive with `ssl`
+#                 default: false
+#   - from     -- the sender of the email
+#                 default: <user>@<hostname>
+#   - to       -- required, the recipient of the email.  can be a list
+#                 to send the email to multiple recipients
+#   - subject  -- a custom subject for the email
+#                 default: 'unusual system events'
+
+actions:
+  email:
+    type: smtp
+    to: root@example.com
