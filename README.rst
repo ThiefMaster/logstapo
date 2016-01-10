@@ -1,6 +1,10 @@
 Logstapo
 ========
 
+.. image:: https://travis-ci.org/ThiefMaster/logstapo.svg?branch=master
+    :target: https://travis-ci.org/ThiefMaster/logstapo
+
+
 Logstapo is a tool that checks new entries in log files and performs
 actions based on them.
 
