@@ -147,6 +147,8 @@ logs:
 #                 to send the email to multiple recipients
 #   - subject  -- a custom subject for the email
 #                 default: 'unusual system events'
+#   - group    -- whether to group log entries from the same source
+#                 together.  within a source the order stays the same
 
 actions:
   email:

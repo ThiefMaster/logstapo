@@ -72,6 +72,7 @@ class SMTPAction(Action):
         except KeyError:
             raise ConfigError('email recipient (to) missing')
         self.subject = data.get('subject', 'unusual system events')
+        self.group_by_source = data.get('group', False)
         if self.ssl and self.starttls:
             raise ConfigError('ssl and starttls are mutually exclusive')
         if bool(self.username) != bool(self.password):
@@ -86,7 +87,9 @@ class SMTPAction(Action):
 
     def _build_msg(self, data):
         msg = []
-        for i, (logname, (lines, unparsable)) in enumerate(data.items()):
+        for i, (logname, (lines, unparsable)) in enumerate(sorted(data.items())):
+            if self.group_by_source:
+                lines = sorted(lines, key=lambda x: x[1]['source'])
             if i > 0:
                 msg += [''] * 3
             msg += underlined("Logstapo results for '{}'".format(logname))
