@@ -112,6 +112,9 @@ class SMTPAction(Action):
 
         cls = smtplib.SMTP_SSL if self.ssl else smtplib.SMTP
         debug_echo('using {} client'.format(cls.__name__))
+        if current_config['dry_run']:
+            debug_echo('not sending email due to dry-run')
+            return
         smtp = cls(self.host, self.port)
         smtp.set_debuglevel(current_config['debug'])
         with smtp:
