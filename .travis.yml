@@ -5,9 +5,10 @@ python:
   - 3.5
 install:
   - pip install -U pip
-  - pip install pytest pytest-pep8
+  - pip install -r requirements.txt
+  - pip install -r requirements-dev.txt
 script:
   - pip install -e .
-  - py.test --pep8
+  - py.test -v
 notifications:
   email: false

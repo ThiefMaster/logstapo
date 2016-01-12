@@ -1,6 +1,8 @@
 /.venv/
 /.idea/
 /.cache/
+/htmlcov/
+.coverage
 .*.swp
 *.pyc
 *.cfg
