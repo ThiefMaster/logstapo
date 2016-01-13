@@ -1,0 +1,8 @@
+[run]
+branch = true
+source = logstapo
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
