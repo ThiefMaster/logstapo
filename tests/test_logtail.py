@@ -1,3 +1,5 @@
+from functools import partial
+
 import pytest
 
 from logstapo.logtail import logtail
@@ -10,28 +12,34 @@ def test_logtail_invalid(mocker, tmpdir):
 
 
 @pytest.mark.parametrize('rotated_suffix', ('.1', '-20150101'))
-def test_logtail(mocker, tmpdir, rotated_suffix):
+@pytest.mark.parametrize('custom_offset_path', (False, True))
+def test_logtail(mocker, tmpdir, rotated_suffix, custom_offset_path):
     mocker.patch('logstapo.logtail.debug_echo')
     mocker.patch('logstapo.logtail.warning_echo')
     log = tmpdir.join('test.log')
     rotated = tmpdir.join('test.log' + rotated_suffix)
-    offset = tmpdir.join('test.log.offset')
+    if custom_offset_path:
+        offset = tmpdir.join('offset_test.log')
+        logtail_fn = partial(logtail, offset_path=offset.strpath)
+    else:
+        offset = tmpdir.join('test.log.offset')
+        logtail_fn = logtail
     log.write('hello\nworld\n')
     assert not offset.check()
-    assert list(logtail(log.strpath)) == ['hello', 'world']
+    assert list(logtail_fn(log.strpath)) == ['hello', 'world']
     assert offset.check()
     data = offset.read()
-    assert list(logtail(log.strpath)) == []
+    assert list(logtail_fn(log.strpath)) == []
     assert data == offset.read()
     # append
     log.write('foo\n', 'a')
-    assert list(logtail(log.strpath)) == ['foo']
-    assert list(logtail(log.strpath)) == []
+    assert list(logtail_fn(log.strpath)) == ['foo']
+    assert list(logtail_fn(log.strpath)) == []
     # append and rotate
     log.write('foo\n', 'a')
     log.rename(rotated)
     log.write('new\n')
-    assert list(logtail(log.strpath)) == ['foo', 'new']
+    assert list(logtail_fn(log.strpath)) == ['foo', 'new']
 
 
 def test_logtail_shrink(mocker, tmpdir):
