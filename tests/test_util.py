@@ -25,16 +25,16 @@ def test_try_match(regexps, string, expected):
 
 
 @pytest.mark.parametrize('debug', (True, False))
-def test_debug_echo(mocker, debug):
-    mocker.patch('logstapo.config.current_config', {'debug': debug})
+def test_debug_echo(mocker, mock_config, debug):
+    mock_config({'debug': debug})
     secho = mocker.patch('logstapo.util.click.secho')
     util.debug_echo('test')
     assert secho.called == debug
 
 
 @pytest.mark.parametrize(('level', 'verbosity', 'debug'), itertools.product((1, 2), (0, 1, 2), (True, False)))
-def test_verbose_echo(mocker, level, verbosity, debug):
-    mocker.patch('logstapo.config.current_config', data={'debug': debug, 'verbosity': verbosity})
+def test_verbose_echo(mocker, mock_config, level, verbosity, debug):
+    mock_config({'debug': debug, 'verbosity': verbosity})
     secho = mocker.patch('logstapo.util.click.secho')
     util.verbose_echo(level, 'test')
     assert secho.called == (debug or (level <= verbosity))
