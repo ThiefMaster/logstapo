@@ -6,7 +6,7 @@ from copy import deepcopy
 import click
 import yaml
 
-from logstapo.util import warning_echo, ensure_collection
+from logstapo.util import warning_echo, ensure_collection, combine_placeholders
 
 
 INITIAL_CONFIG = {'verbosity': 0,
@@ -19,21 +19,6 @@ INITIAL_CONFIG = {'verbosity': 0,
 
 class ConfigError(Exception):
     pass
-
-
-def _combine(string, placeholders, _placeholder_re=re.compile(r'%\(([^)]+)\)')):
-    def _repl(m):
-        name = m.group(1)
-        try:
-            return placeholders[name]
-        except KeyError:
-            raise ConfigError('placeholder does not exist: ' + name)
-
-    while True:
-        string, n = _placeholder_re.subn(_repl, string)
-        if not n:
-            break
-    return string
 
 
 class _Pattern(object):
@@ -145,7 +130,10 @@ def parse_config(file, *, verbosity=None, debug=None):
         for name, regex in regexps.items():
             if name.startswith('__'):
                 continue
-            regex = _combine(regex, placeholders)
+            try:
+                regex = combine_placeholders(regex, placeholders)
+            except KeyError as exc:
+                raise ConfigError('placeholder does not exist: {}'.format(exc)) from exc
             try:
                 config['regexps'][name] = re.compile(regex)
             except re.error as exc:

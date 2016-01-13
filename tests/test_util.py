@@ -71,3 +71,16 @@ def test_underlines(text, chars, expected):
 ))
 def test_ensure_collection(value, collection_type, result):
     assert util.ensure_collection(value, collection_type) == result
+
+
+def test_combine_placeholders():
+    assert util.combine_placeholders('test', {'test': 'xxx'}) == 'test'
+    assert util.combine_placeholders('test%(test)test', {'test': 'xxx'}) == 'testxxxtest'
+    assert util.combine_placeholders('test%(a)%(b)', {'a': '1%(b)', 'b': '2'}) == 'test122'
+
+
+def test_combine_placeholders_cycle():
+    with pytest.raises(ValueError):
+        util.combine_placeholders('test%(a)', {'a': '%(a)'})
+    with pytest.raises(ValueError):
+        util.combine_placeholders('test%(a)', {'a': '%(b)', 'b': '%(a)'})

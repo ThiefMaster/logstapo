@@ -1,5 +1,7 @@
-import click
 import math
+import re
+
+import click
 
 
 def try_match(regexps, string):
@@ -87,3 +89,36 @@ def ensure_collection(value, collection_type):
     :return: a `collection_type` object containing the value
     """
     return collection_type((value,)) if value and isinstance(value, str) else collection_type(value)
+
+
+def combine_placeholders(string, placeholders, _placeholder_re=re.compile(r'%\(([^)]+)\)')):
+    """Replace ``%(blah)`` placeholders in a string.
+
+    Each placeholder may contain other placeholders.
+
+    :param string: A string that may contain placeholders
+    :param placeholders: A dict containing placeholders and their
+                         values.
+    """
+    def _repl(m):
+        return placeholders[m.group(1)]
+
+    # ensure we don't have cycles that would cause an infinite loop
+    # resulting in massive memory use
+    for name, value in placeholders.items():
+        referenced = set()
+        while True:
+            matches = set(_placeholder_re.findall(value))
+            if not matches:
+                break
+            elif matches & referenced:
+                raise ValueError('placeholder leads to a cycle: ' + name)
+            referenced |= matches
+            value = _placeholder_re.sub(_repl, value)
+
+    # perform the actual replacements
+    while True:
+        string, n = _placeholder_re.subn(_repl, string)
+        if not n:
+            break
+    return string
