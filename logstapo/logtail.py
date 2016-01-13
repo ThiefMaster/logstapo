@@ -98,7 +98,7 @@ def _parse_offset_file(path):
     try:
         with open(path) as f:
             inode = int(f.readline())
-            offset = int(f.readline())
+            offset = int(f.readline())  # pragma: no branch
     except FileNotFoundError as exc:
         debug_echo('open() failed: {}'.format(exc))
         return None, 0
@@ -114,6 +114,6 @@ def _write_offset_file(path, inode, offset):
     try:
         with open(path, 'w') as offset_file:
             os.fchmod(offset_file.fileno(), 0o600)
-            offset_file.write('{}\n{}\n'.format(inode, offset))
+            offset_file.write('{}\n{}\n'.format(inode, offset))  # pragma: no branch
     except OSError as exc:
         warning_echo('Could not write: {} ({})'.format(path, exc))
