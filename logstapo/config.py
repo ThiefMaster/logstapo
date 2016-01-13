@@ -49,7 +49,7 @@ class _Pattern(object):
 
     def test(self, string):
         if self.always_match:
-            return True
+            return not self.negate
         found = self.regex.match(string) is not None
         return found ^ self.negate
 
