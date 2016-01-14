@@ -27,10 +27,10 @@ def _config_callback(ctx, param, value):
               help="The path to the application's config file")
 @click.option('-n', '--dry-run', is_flag=True, is_eager=True,
               help="Perform a dry run (not modifying any offset files or executing actions)")
-@click.option('-v', '--verbose', count=True, is_eager=True, type=click.IntRange(min=0, max=3),
-              help="Enable more verbose output; can be specified up to 3 times.")
+@click.option('-v', '--verbose', count=True, is_eager=True, type=click.IntRange(min=0, max=2),
+              help="Enable more verbose output; can be specified up to 2 times.")
 @click.option('-d', '--debug', is_flag=True, is_eager=True,
-              help="Enable debug output (very spammy)")
+              help="Enable debug output (very spammy); implies -vv")
 @click.version_option(__version__, '-V', '--version')
 def main(**kwargs):
     """
