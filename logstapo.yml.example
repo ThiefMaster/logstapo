@@ -1,30 +1,5 @@
 # Example config for logstapo
 
-# By default nothing is printed when running logstapo without errors.
-# This is ideal for a cron environment where all output results in an
-# email being sent.  When running it manually you might be interested
-# in more verbose output.  Each verbosity levels include the all
-# information from lower levels.
-#
-# The following verbosity levels can be used:
-#   - 0 -- default, no output except in case of an error
-#   - 1 -- non-spammy messages while processing log files
-#   - 2 -- shows all entries that are not ignored/garbage.  useful
-#          for testing since you can see which messages would be
-#          included in an action without having one configured.
-#
-# The following debugging modes can be used:
-#   - false -- default, no debug output
-#   - true  -- shows all entries that are processed.  very spammy!
-#
-# These settings may be overridden via command-line arguments.  It
-# is rarely useful to set them in the config file.
-# Enabling debug also enables maximum verbosity.
-
-verbosity: 0
-debug: false
-
-
 # Regular expressions used to parse log entries.  Usually you do not
 # need to change them, but if your log files have non-standard formats
 # you might need to adapt them to your logfiles.

@@ -3,18 +3,21 @@ import click
 from logstapo import __version__
 from logstapo.core import run
 from logstapo.defaults import CONFIG_FILE_PATH
-from logstapo.config import parse_config, ConfigError
+from logstapo.config import ConfigError, parse_config, process_config
 from logstapo.util import error_echo
 
 
 def _config_callback(ctx, param, value):
     try:
-        config = parse_config(value, verbosity=ctx.params['verbose'], debug=ctx.params['debug'])
+        data = parse_config(value)
+        config = process_config(data)
     except ConfigError as exc:
         error_echo('Could not load config file')
         error_echo(str(exc))
         ctx.exit(1)
     else:
+        config['verbosity'] = ctx.params['verbose']
+        config['debug'] = ctx.params['debug']
         config['dry_run'] = ctx.params['dry_run']
         return config
 
@@ -34,6 +37,8 @@ def main(**kwargs):
     Logstapo is a tool that checks new entries in log files and
     performs actions based on them.
     """
+    # kwargs is not used as the config is taken from the click context
+    # to avoid passing it around all the time
     run()
 
 

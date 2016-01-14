@@ -82,44 +82,29 @@ def _unify_nested_patterns(value):
         return {_Pattern(): _unify_patterns(value)}
 
 
-def parse_config(file, *, verbosity=None, debug=None):
+def parse_config(file):
+    """Parse the application YAML config file.
+
+    :return: The parsed YAML document
+    :raise ConfigError: If the YAML parser cannot parse the file.
+    """
+    try:
+        return yaml.safe_load(file)
+    except yaml.YAMLError as exc:
+        raise ConfigError('yaml parse error: {}'.format(exc))
+
+
+def process_config(data):
     """Parse the application config file.
 
     This raises an exception if the config file cannot be parsed or
     does not contain all required entries.
 
-    :param file: A file-like object containing the YAML config
-    :param verbosity: Verbosity override - if specified the config
-                      value is ignored.
-    :param debug: Debug override - if specified the config value is
-                  ignored.
+    :param data: The dict containing the configuration
+    :return: A canonicalized version of the dict containing exactly
+             the data needed by logstapo.
     """
-    try:
-        data = yaml.safe_load(file)
-    except yaml.YAMLError as exc:
-        raise ConfigError('yaml parse error: {}'.format(exc))
     config = deepcopy(INITIAL_CONFIG)
-    # verbosity
-    try:
-        config['verbosity'] = int(data['verbosity'])
-        assert 0 <= config['verbosity'] <= 2
-    except KeyError:
-        pass
-    except (TypeError, ValueError, AssertionError):
-        raise ConfigError('verbosity must be in range 0..2')
-    if verbosity is not None:
-        config['verbosity'] = verbosity
-    # debug
-    try:
-        config['debug'] = bool(data['debug'])
-    except KeyError:
-        pass
-    except (TypeError, ValueError):
-        raise ConfigError('debug must be true/false')
-    if debug is not None:
-        config['debug'] = debug
-    if config['debug']:
-        config['verbosity'] = 2
     # regexps
     try:
         regexps = data['regexps']
