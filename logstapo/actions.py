@@ -25,13 +25,13 @@ def run_actions(results):
 
 
 class Action(object):
-    def __init__(self, data):
+    def __init__(self, data):  # pragma: no cover
         raise NotImplementedError
 
     def __repr__(self):
         return '<{}()>'.format(type(self).__name__)
 
-    def run(self, data):
+    def run(self, data):  # pragma: no cover
         """Performs whatever the action is supposed to do.
 
         This method MUST honor ``current_config['dry_run']`` and not
