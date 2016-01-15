@@ -62,6 +62,84 @@ class _Pattern(object):
             return '<Pattern {!r}>'.format(self.regex.pattern)
 
 
+def parse_config(file):
+    """Parse the application YAML config file.
+
+    :return: The parsed YAML document
+    :raise ConfigError: If the YAML parser cannot parse the file.
+    """
+    try:
+        return yaml.safe_load(file)
+    except yaml.YAMLError as exc:
+        raise ConfigError('yaml parse error: {}'.format(exc))
+
+
+def _process_regexps(data):
+    placeholders = {name[2:]: regex for name, regex in data.items() if name.startswith('__')}
+    regexps = {}
+    for name, regex in data.items():
+        if name.startswith('__'):
+            continue
+        try:
+            regex = combine_placeholders(regex, placeholders)
+        except KeyError as exc:
+            raise ConfigError('placeholder does not exist: {}'.format(exc)) from exc
+        try:
+            compiled = re.compile(regex)
+        except re.error as exc:
+            raise ConfigError('regex could not be compiled: {} ({})\n{}'.format(name, exc, regex))
+        if set(compiled.groupindex) < {'source', 'message'}:
+            raise ConfigError("regex must contain named groups 'source' and 'message': {}".format(name))
+        regexps[name] = compiled
+    return regexps
+
+
+def _process_actions(data):
+    from logstapo.actions import Action
+    auto_actions = set()
+    actions = {}
+    for name, actiondata in data.items():
+        actiondata = dict(actiondata)
+        try:
+            type_ = actiondata.pop('type')
+        except KeyError:
+            raise ConfigError('invalid action definition ({}): no type specified'.format(name))
+        if actiondata.pop('auto', True):
+            auto_actions.add(name)
+        try:
+            actions[name] = Action.from_config(type_, actiondata)
+        except ConfigError as exc:
+            raise ConfigError('invalid action definition ({}): {}'.format(name, exc)) from exc
+    return actions, auto_actions
+
+
+def _process_log_files(logdata):
+    files = set(itertools.chain.from_iterable(ensure_collection(logdata.get(key, ''), set)
+                                              for key in ('file', 'files')))
+    if not files:
+        raise ConfigError('no files specified')
+    return files
+
+
+def _process_log_regexps(logdata, name, available):
+    regexps = ensure_collection(logdata.get('regex', name), tuple)
+    invalid = next((x for x in regexps if x not in available), None)
+    if invalid is not None:
+        raise ConfigError('invalid regex specified: {}'.format(invalid))
+    return regexps
+
+
+def _process_log_actions(logdata, name, auto_actions, available):
+    if not any(x in logdata for x in ('action', 'actions')):
+        return auto_actions
+    actions = set(itertools.chain.from_iterable(ensure_collection(logdata.get(key, ''), set)
+                                                for key in ('action', 'actions')))
+    invalid = next((x for x in actions if x not in available), None)
+    if invalid is not None:
+        raise ConfigError('invalid action specified: {}'.format(invalid))
+    return actions
+
+
 def _unify_patterns(value):
     if not value:
         return []
@@ -82,16 +160,29 @@ def _unify_nested_patterns(value):
         return {_Pattern(): _unify_patterns(value)}
 
 
-def parse_config(file):
-    """Parse the application YAML config file.
-
-    :return: The parsed YAML document
-    :raise ConfigError: If the YAML parser cannot parse the file.
-    """
-    try:
-        return yaml.safe_load(file)
-    except yaml.YAMLError as exc:
-        raise ConfigError('yaml parse error: {}'.format(exc))
+def _process_logs(data, config_regexps, config_actions, auto_actions):
+    logs = {}
+    for name, logdata in data.items():
+        try:
+            # files
+            files = _process_log_files(logdata)
+            # regexps
+            regexps = _process_log_regexps(logdata, name, config_regexps)
+            # patterns
+            garbage = _unify_patterns(logdata.get('garbage'))
+            ignore = _unify_nested_patterns(logdata.get('ignore'))
+            # actions
+            actions = _process_log_actions(logdata, name, auto_actions, config_actions)
+        except ConfigError as exc:
+            raise ConfigError('invalid log definition ({}): {}'.format(name, exc)) from exc
+        if not actions:
+            warning_echo('useless log definition ({}): no actions defined'.format(name))
+        logs[name] = {'files': tuple(sorted(files)),
+                      'regexps': regexps,
+                      'garbage': garbage,
+                      'ignore': ignore,
+                      'actions': tuple(sorted(actions))}
+    return logs
 
 
 def process_config(data):
@@ -105,80 +196,15 @@ def process_config(data):
              the data needed by logstapo.
     """
     config = deepcopy(INITIAL_CONFIG)
-    # regexps
     try:
         regexps = data['regexps']
-    except KeyError:
-        raise ConfigError('required section missing: regexps')
-    else:
-        placeholders = {name[2:]: regex for name, regex in regexps.items() if name.startswith('__')}
-        for name, regex in regexps.items():
-            if name.startswith('__'):
-                continue
-            try:
-                regex = combine_placeholders(regex, placeholders)
-            except KeyError as exc:
-                raise ConfigError('placeholder does not exist: {}'.format(exc)) from exc
-            try:
-                config['regexps'][name] = re.compile(regex)
-            except re.error as exc:
-                raise ConfigError('regex could not be compiled: {} ({})\n{}'.format(name, exc, regex))
-    # actions
-    auto_actions = set()
-    try:
-        actions = data['actions'] or {}
-    except KeyError:
-        raise ConfigError('required section missing: actions')
-    else:
-        for name, actiondata in actions.items():
-            actiondata = dict(actiondata)
-            try:
-                type_ = actiondata.pop('type')
-            except KeyError:
-                raise ConfigError('invalid action definition ({}): no type specified'.format(name))
-            if actiondata.pop('auto', True):
-                auto_actions.add(name)
-            try:
-                from logstapo.actions import Action
-                config['actions'][name] = Action.from_config(type_, actiondata)
-            except ConfigError as exc:
-                raise ConfigError('invalid action definition ({}): {}'.format(name, exc)) from exc
-    # logs
-    try:
         logs = data['logs']
-    except KeyError:
-        raise ConfigError('required section missing: logs')
-    else:
-        for name, logdata in logs.items():
-            # files
-            files = set(itertools.chain.from_iterable(ensure_collection(logdata.get(key, ''), set)
-                                                      for key in ('file', 'files')))
-            if not files:
-                raise ConfigError('invalid log definition ({}): no files specified'.format(name))
-            # regexps
-            regexps = ensure_collection(logdata.get('regex', name), tuple)
-            if any(x not in config['regexps'] for x in regexps):
-                regex = next(x for x in regexps if x not in config['regexps'])
-                raise ConfigError('invalid log definition ({}): invalid regex specified: {}'.format(name, regex))
-            # patterns
-            garbage = _unify_patterns(logdata.get('garbage'))
-            ignore = _unify_nested_patterns(logdata.get('ignore'))
-            # actions
-            if not any(x in logdata for x in ('action', 'actions')):
-                actions = auto_actions
-            else:
-                actions = set(itertools.chain.from_iterable(ensure_collection(logdata.get(key, ''), set)
-                                                            for key in ('action', 'actions')))
-                if any(x not in config['actions'] for x in actions):
-                    action = next(x for x in actions if x not in config['actions'])
-                    raise ConfigError('invalid log definition ({}): invalid action specified: {}'.format(name, action))
-            if not actions:
-                warning_echo('useless log definition ({}): no actions defined'.format(name))
-            config['logs'][name] = {'files': tuple(sorted(files)),
-                                    'regexps': regexps,
-                                    'garbage': garbage,
-                                    'ignore': ignore,
-                                    'actions': tuple(sorted(actions))}
+        actions = data.get('actions') or {}
+    except KeyError as exc:
+        raise ConfigError('required section missing: {}'.format(exc))
+    config['regexps'] = _process_regexps(regexps)
+    config['actions'], auto_actions = _process_actions(actions)
+    config['logs'] = _process_logs(logs, config['regexps'], config['actions'], auto_actions)
     return config
 
 
