@@ -20,7 +20,7 @@ def logtail(path, offset_path=None, *, dry_run=False):
         offset_path = path + '.offset'
 
     try:
-        logfile = open(path)
+        logfile = open(path, encoding='utf-8', errors='replace')
     except OSError as exc:
         warning_echo('Could not read: {} ({})'.format(path, exc))
         return
@@ -46,7 +46,7 @@ def logtail(path, offset_path=None, *, dry_run=False):
                 rotated_path = _check_rotated_file(path, inode)
                 if rotated_path is not None:
                     try:
-                        rotated_file = open(rotated_path)
+                        rotated_file = open(rotated_path, encoding='utf-8', errors='replace')
                     except OSError as exc:
                         warning_echo('Could not read rotated file: {} ({})'.format(rotated_path, exc))
                     else:

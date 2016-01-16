@@ -42,6 +42,23 @@ def test_logtail(mocker, tmpdir, rotated_suffix, custom_offset_path):
     assert list(logtail_fn(log.strpath)) == ['foo', 'new']
 
 
+def test_logtail_bad_charset(mocker, tmpdir):
+    mocker.patch('logstapo.logtail.debug_echo')
+    mocker.patch('logstapo.logtail.warning_echo')
+    log = tmpdir.join('test.log')
+    garbage = bytes(bytearray(range(33, 256)))
+    # proper utf8
+    log.write('möp\n'.encode('utf-8'), mode='wb')
+    # not utf8
+    log.write('möp\n'.encode('latin1'), mode='ab')
+    # pure garbage
+    log.write(garbage, mode='ab')
+    lines = list(logtail(log.strpath))
+    assert lines == ['möp',
+                     'm\N{REPLACEMENT CHARACTER}p',
+                     ''.join(chr(x) if x < 128 else '\N{REPLACEMENT CHARACTER}' for x in garbage)]
+
+
 def test_logtail_shrink(mocker, tmpdir):
     mocker.patch('logstapo.logtail.debug_echo')
     warning_echo = mocker.patch('logstapo.logtail.warning_echo')
