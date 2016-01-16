@@ -1,0 +1,46 @@
+regexps:
+  __time: '\d{2}:\d{2}:\d{2}(?:,\d+)?'
+  __timestamp: '[A-Za-z]{3}\s+\d{1,2} %(time)'
+  __hostname: '\S+'
+  __pid: '(?:\[\d+\])'
+  __daemon_with_pid: '(?:(?P<source>\S+?)%(pid)?:?)'
+  __kernel_prefix: '(?P<source>kernel): \[ *\d+\.\d+\]'
+  __message: '(?P<message>.*)'
+  syslog: '^%(timestamp) %(hostname) %(daemon_with_pid)\s+%(message)$'
+  kernel: '^%(timestamp) %(hostname) %(kernel_prefix)\s+%(message)$'
+
+
+logs:
+  syslog:
+    files:
+      - $LOGDIR/syslog.log
+      - $LOGDIR/auth.log
+    garbage:
+      - /\*\*\* MARK \*\*\*/
+    ignore:
+      CROND: '*'
+      run-crons: '*'
+      sshd:
+        - 'pam_unix(sshd:session): session opened *'
+        - 'pam_unix(sshd:session): session closed *'
+        - 'pam_unix(sshd:auth): authentication failure; *'
+        - 'Invalid user *'
+        - '* invalid user *'
+        - 'pam_tally2(sshd:auth): pam_get_uid; no such user'
+  kernel:
+    file: $LOGDIR/kernel.log
+    ignore:
+      - 'usb *: USB disconnect, device number *'
+
+
+actions:
+  test:
+    type: smtp
+    host: $SMTP_HOST
+    port: $SMTP_PORT
+    subject: Found unusual log entries
+    from: root@example.com
+    to:
+      - root@example.com
+      - admins@example.com
+    group: true

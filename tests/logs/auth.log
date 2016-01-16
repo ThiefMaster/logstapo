@@ -1,0 +1,17 @@
+Dec 28 01:29:46 hydra sshd[3702]: Server listening on 0.0.0.0 port 22.
+Dec 28 01:29:46 hydra sshd[3702]: Server listening on :: port 22.
+Dec 28 01:30:12 hydra login[3728]: pam_unix(login:session): session opened for user root by LOGIN(uid=0)
+Dec 28 01:30:12 hydra login[3766]: ROOT LOGIN  on '/dev/tty1'
+Dec 28 01:57:53 hydra sshd[3795]: Accepted publickey for root from fe80::123 port 45459 ssh2: RSA SHA256:whatever
+Dec 28 01:57:53 hydra sshd[3795]: pam_unix(sshd:session): session opened for user root by (uid=0)
+Dec 28 02:19:53 hydra useradd[18048]: new user: name=ntp, UID=123, GID=123, home=/dev/null, shell=/sbin/nologin
+Dec 28 02:39:03 hydra sshd[9264]: pam_unix(sshd:session): session opened for user root by (uid=0)
+Dec 28 02:39:03 hydra sshd[9264]: pam_unix(sshd:session): session closed for user root
+Dec 28 02:39:16 hydra sshd[9286]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=fe80::123  user=root
+Dec 28 02:49:00 hydra su[9915]: Successful su for root by root
+Dec 28 02:49:00 hydra su[9915]: + /dev/pts/3 root:root
+Dec 28 02:49:00 hydra su[9915]: pam_unix(su:session): session opened for user root by (uid=0)
+Dec 28 03:23:03 hydra sshd[4390]: Invalid user hail from fe80::123
+Dec 28 03:23:03 hydra sshd[4390]: input_userauth_request: invalid user hail [preauth]
+Dec 28 03:23:03 hydra sshd[4392]: pam_tally2(sshd:auth): pam_get_uid; no such user
+Dec 28 03:23:03 hydra sshd[4390]: Postponed keyboard-interactive for invalid user hail from fe80::123 port 36908 ssh2 [preauth]

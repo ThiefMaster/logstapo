@@ -8,4 +8,4 @@
 *.cfg
 *.egg-info
 *.whl
-logstapo*.yml
+/logstapo*.yml

@@ -1,0 +1,9 @@
+Jan  9 01:50:01 hydra CROND[26273]: (root) CMD ([ ! -x /etc/cron.hourly/0anacron ] && { test -x /usr/sbin/run-crons && /usr/sbin/run-crons ; })
+Jan  9 01:59:01 hydra CROND[26456]: (root) CMD ([ ! -x /etc/cron.hourly/0anacron ] && rm -f /var/spool/cron/lastrun/cron.hourly)
+Jan  9 03:10:01 hydra run-crons[27906]: (root) CMD (/etc/cron.daily/man-db)
+Jan  9 03:10:01 hydra run-crons[27909]: (root) CMD (/etc/cron.daily/mlocate)
+Jan  9 04:20:02 hydra run-crons[29347]: (root) CMD (/etc/cron.weekly/update-root-hint)
+Jan  9 23:57:31 hydra root[21527]: test
+Jan  9 23:59:01 hydra CROND[21588]: (root) CMD ([ ! -x /etc/cron.hourly/0anacron ] && rm -f /var/spool/cron/lastrun/cron.hourly)
+*** MARK ***
+Jan 10 01:48:26 hydra test: meow!
