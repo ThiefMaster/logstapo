@@ -111,7 +111,7 @@ class SMTPAction(Action):
         msg = MIMEText(self._build_msg(data))
         msg['Subject'] = self.subject
         msg['From'] = self.sender
-        msg['To'] = ', '.join(self.recipients)
+        msg['To'] = ', '.join(sorted(self.recipients))
 
         cls = smtplib.SMTP_SSL if self.ssl else smtplib.SMTP
         debug_echo('using {} client'.format(cls.__name__))
