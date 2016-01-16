@@ -92,7 +92,7 @@ class SMTPAction(Action):
                 # This should never happen - run_action filters such entries
                 continue
             if self.group_by_source:
-                lines = sorted(lines, key=lambda x: x[1]['source'])
+                lines = sorted(lines, key=lambda x: x[1]['source'].lower())
             if i > 0:
                 msg += [''] * 3
             msg += underlined("Logstapo results for '{}'".format(logname))
