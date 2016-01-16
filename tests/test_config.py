@@ -271,6 +271,10 @@ def test_process_config(mocker, has_actions):
 
 def test_process_config_invalid():
     with pytest.raises(config.ConfigError):
+        config.process_config(None)
+    with pytest.raises(config.ConfigError):
+        config.process_config([])
+    with pytest.raises(config.ConfigError):
         config.process_config({})
     data = {'regexps': {'test': '(?P<source>.)(?P<message>.)'},
             'logs': {'test': {}}}

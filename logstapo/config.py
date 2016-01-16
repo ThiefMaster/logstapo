@@ -202,6 +202,8 @@ def process_config(data):
         actions = data.get('actions') or {}
     except KeyError as exc:
         raise ConfigError('required section missing: {}'.format(exc))
+    except TypeError:
+        raise ConfigError('config is not a dict: received {}'.format(type(data)))
     config['regexps'] = _process_regexps(regexps)
     config['actions'], auto_actions = _process_actions(actions)
     config['logs'] = _process_logs(logs, config['regexps'], config['actions'], auto_actions)
