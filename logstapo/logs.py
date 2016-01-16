@@ -32,7 +32,7 @@ def process_log(name):
     ignore = data['ignore']
     regexps = [config['regexps'][regex_name] for regex_name in config['logs'][name]['regexps']]
     if verbosity >= 1:  # pragma: no cover
-        verbose_echo(1, "*** Processing log '{}' ({})".format(name, ', '.join(data['files'])), err=False)
+        verbose_echo(1, "*** Processing log '{}' ({})".format(name, ', '.join(data['files'])))
         if garbage:
             verbose_echo(1, '  Garbage patterns:')
             for pattern in garbage:

@@ -31,10 +31,10 @@ def debug_echo(message):
     """
     from logstapo.config import current_config
     if current_config['debug']:
-        click.secho('[D] ' + message, err=True, fg='black', bold=True)
+        click.secho('[D] ' + message, fg='black', bold=True)
 
 
-def verbose_echo(level, message, *, err=True):
+def verbose_echo(level, message):
     """Display a verbose message on stderr.
 
     The message is only displayed if verbose output is enabled and the
@@ -42,14 +42,12 @@ def verbose_echo(level, message, *, err=True):
 
     :param level: The minimum verbosity level that is required
     :param message: The message to display
-    :param err: Whether the message should be written to stderr
-                instead of stdout.
     """
     from logstapo.config import current_config
     config = current_config.data
     if config['debug'] or config['verbosity'] >= level:
         color = 'magenta' if level > 1 else 'blue'
-        click.secho('[{}] {}'.format(level, message), err=err, fg=color, bold=True)
+        click.secho('[{}] {}'.format(level, message), fg=color, bold=True)
 
 
 def warning_echo(message):
