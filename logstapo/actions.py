@@ -88,6 +88,9 @@ class SMTPAction(Action):
     def _build_msg(self, data):
         msg = []
         for i, (logname, (lines, unparsable)) in enumerate(sorted(data.items())):
+            if not lines and not unparsable:
+                # This should never happen - run_action filters such entries
+                continue
             if self.group_by_source:
                 lines = sorted(lines, key=lambda x: x[1]['source'])
             if i > 0:
