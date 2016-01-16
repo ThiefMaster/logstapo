@@ -26,6 +26,23 @@ Dec 28 02:19:53 hydra useradd[18048]: new user: name=ntp, UID=123, GID=123, home
 '''.strip()
 
 
+TEST_MAIL_BODY_2 = '''
+Logstapo results for 'kernel'
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+Unusual lines
+-------------
+Jan 17 00:25:00 hydra kernel: [1220303.475530] e1000e: lan0 NIC Link is Down
+Jan 17 00:25:01 hydra kernel: [1220306.643383] e1000e: lan0 NIC Link is Up 1000 Mbps Full Duplex, Flow Control: Rx/Tx
+'''.strip()
+
+
+TEST_LOG_APPEND = '''
+Jan 17 00:25:00 hydra kernel: [1220303.475530] e1000e: lan0 NIC Link is Down
+Jan 17 00:25:01 hydra kernel: [1220306.643383] e1000e: lan0 NIC Link is Up 1000 Mbps Full Duplex, Flow Control: Rx/Tx
+'''.strip()
+
+
 def test_logstapo(tmpdir, smtpserver):
     testdir = py.path.local(os.path.dirname(__file__))
     logdir = tmpdir.join('logs')
@@ -43,8 +60,22 @@ def test_logstapo(tmpdir, smtpserver):
     assert not rv.output
     assert rv.exit_code == 0
     assert len(smtpserver.outbox) == 1
-    mail = smtpserver.outbox[0]
+    mail = smtpserver.outbox.pop()
     assert mail['Subject'] == 'Found unusual log entries'
     assert mail['From'] == 'root@example.com'
     assert mail['To'] == 'admins@example.com, root@example.com'
     assert mail.get_payload() == TEST_MAIL_BODY
+    # write something new to the log
+    logdir.join('kernel.log').write(TEST_LOG_APPEND + '\n', 'a')
+    # second run, should cause another email with the new line
+    rv = runner.invoke(main, ['-c', config.strpath], catch_exceptions=False)
+    assert not rv.output
+    assert rv.exit_code == 0
+    assert len(smtpserver.outbox) == 1
+    mail = smtpserver.outbox.pop()
+    assert mail.get_payload() == TEST_MAIL_BODY_2
+    # run again - no new lines -> no emails
+    rv = runner.invoke(main, ['-c', config.strpath], catch_exceptions=False)
+    assert not rv.output
+    assert rv.exit_code == 0
+    assert len(smtpserver.outbox) == 0
