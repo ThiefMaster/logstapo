@@ -1,2 +1,2 @@
-click==6.2
-PyYAML==3.11
+click==7.1.2
+PyYAML==5.3.1
