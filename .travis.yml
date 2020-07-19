@@ -1,10 +1,9 @@
 sudo: false
 language: python
 python:
-  - 3.4
-  - 3.5
+  - 3.8
 install:
-  - pip install -U pip
+  - pip install -U pip setuptools
   - pip install -r requirements.txt
   - pip install -r requirements-dev.txt
   - pip install coveralls
